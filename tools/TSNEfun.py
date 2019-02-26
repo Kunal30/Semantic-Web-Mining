@@ -15,12 +15,51 @@ from pprint import pprint
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn import metrics
 from sklearn.naive_bayes import MultinomialNB
+import gensim
+from gensim.utils import simple_preprocess
+from gensim.parsing.preprocessing import STOPWORDS
+from nltk.stem import WordNetLemmatizer, SnowballStemmer
+from nltk.stem.porter import *
+import numpy as np
+import nltk
+import pandas as pd
+
+
+'''
+Write a function to perform the pre processing steps on the entire dataset
+'''
+def lemmatize_stemming(text):
+    stemmer= SnowballStemmer("english")
+    return stemmer.stem(WordNetLemmatizer().lemmatize(text, pos='v'))
+
+# Tokenize and lemmatize
+def preprocess(text):
+    result=[]
+    for token in gensim.utils.simple_preprocess(text) :
+        if token not in gensim.parsing.preprocessing.STOPWORDS and len(token) > 3:
+            result.append(lemmatize_stemming(token))
+            
+    return result
 
 def main():
 	
+	# Fetching train and testing data using sklearn's API
+
 	newsgroups_train = fetch_20newsgroups(subset='train')
 	newsgroups_test = fetch_20newsgroups(subset='test')
+	nltk.download('wordnet')
 	
+	
+	
+	
+	#Preprocessing the training data
+	processed_docs = []
+	
+	for doc in newsgroups_train.data:
+		processed_docs.append(preprocess(doc))
+
+	print(processed_docs[0])	
+
 	
 
 
