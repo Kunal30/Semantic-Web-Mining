@@ -23,7 +23,9 @@ from nltk.stem.porter import *
 import numpy as np
 import nltk
 import pandas as pd
-
+from sklearn.manifold import TSNE
+import time
+# from tsne import tsne
 
 '''
 Write a function to perform the pre processing steps on the entire dataset
@@ -93,7 +95,7 @@ def main():
 	'''
 	# TODO
 	lda_model =  gensim.models.LdaMulticore(bow_corpus, 
-	                                   num_topics = 8, 
+	                                   num_topics = 20, 
 	                                   id2word = dictionary,                                    
 	                                   passes = 10,
 	                                   workers = 2)
@@ -106,17 +108,24 @@ def main():
 	    print("Topic: {} \nWords: {}".format(idx, topic ))
 	    print("\n")
 
-	num = 100
-	unseen_document = newsgroups_test.data[num]
-	print(unseen_document)    
+	# num = 100
+	# unseen_documents=[]
+	# for i in range(0,len(newsgroups_test.data)):
+	# 	unseen_documents.append(newsgroups_test.data[i])
+	
+	# print(unseen_documents)    
 
 	# Data preprocessing step for the unseen document
-	bow_vector = dictionary.doc2bow(preprocess(unseen_document))
+	for doc in newsgroups_test.data:
+		bow_vector = dictionary.doc2bow(preprocess(doc))
+		print("*********************************************************************")
+		print(doc)
+		print("*********************************************************************")
+		for index, score in sorted(lda_model[bow_vector], key=lambda tup: -1*tup[1]):
+		    print("Score: {}\t Topic: {}".format(score, lda_model.print_topic(index, 5)))
 
-	for index, score in sorted(lda_model[bow_vector], key=lambda tup: -1*tup[1]):
-	    print("Score: {}\t Topic: {}".format(score, lda_model.print_topic(index, 5)))
-
-	print(newsgroups_test.target[num])    
+	
+	# Now passing the Topic-Document Matrix to the TSNE MODULE:
 
 
 
