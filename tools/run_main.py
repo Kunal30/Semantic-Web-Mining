@@ -94,13 +94,17 @@ def main():
 	Train your lda model using gensim.models.LdaMulticore and save it to 'lda_model'
 	'''
 	# TODO
-	lda_model =  gensim.models.LdaMulticore(bow_corpus, 
-	                                   num_topics = 20, 
-	                                   id2word = dictionary,                                    
-	                                   passes = 10,
-	                                   workers = 2)
+	lda_model = []
+	try:
+		lda_model = gensim.models.LdaModel.load('lda.model')
+	except:
+		lda_model =  gensim.models.LdaMulticore(bow_corpus, 
+										num_topics = 20, 
+										id2word = dictionary,
+										passes = 10,
+										workers = 2)
 
-
+		lda_model.save('lda.model')
 	'''
 	For each topic, we will explore the words occuring in that topic and its relative weight
 	'''
