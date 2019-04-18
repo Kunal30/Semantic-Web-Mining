@@ -1,7 +1,6 @@
 from selenium import webdriver
 from bs4 import BeautifulSoup
-import pandas as pd
-import os, json
+import json, requests
 
 ## start url
 url = "https://cnn.com"
@@ -12,39 +11,37 @@ driver.implicitly_wait(30)
 driver.get(url)
 
 ## get page
-soup_level1=BeautifulSoup(driver.page_source, 'lxml')
+home_page = BeautifulSoup(driver.page_source, 'lxml')
 
 ## get all headlines
-headlines_class = soup_level1.find_all('h3', class_="cd__headline")
-print ('Total headlines found:', len(headlines_class))
+headlines_list = home_page.find_all('h3', class_="cd__headline")
+print ('Total headlines found:', len(headlines_list))
+
+driver.quit()
 
 dataset = []
-for each in headlines_class:
+for each in headlines_list:
     try:
         obj = {
             'title': each.select_one("span").text,
             'link': each.select_one("a").get('href')
         }
 
-        ## click on link
-        # link = each.select_one("a").getAttribute('href')
-        # link = each.find_element_by_tag_name('a')
-        # link.click()
-        driver.get(url + each.select_one("a").get('href'))
+        ## get each link
+        news_link = each.select_one("a").get('href')
+        if (news_link.startswith('/')):
+            news_link = url + news_link
+        page = requests.get(news_link)
+        page_source = page.text
 
         ## parse inner page
-        soup_level2=BeautifulSoup(driver.page_source, 'lxml')
+        article_page = BeautifulSoup(page_source, 'lxml')
         
-        targets = soup_level2.find_all('section', id="body-text")
+        targets = article_page.find_all('section', id="body-text")
         for target in targets:
             text = target.text
             text = text.replace('"', "").replace("'", "")
             obj['text'] = text
-        
-        
-        ## go back to homepage
-        #driver.execute_script("window.history.go(-1)") 
-        driver.get(url)
 
         ## save data
         dataset.append(obj)
@@ -54,8 +51,6 @@ for each in headlines_class:
 
     print ("({}) Parsed news with headline:- [{}]".format(len(dataset), each.select_one("span").text))
 
-
-driver.quit()
 
 #write to file
 with open("cnn_out.json", 'w') as outfile:  
