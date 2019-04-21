@@ -39,6 +39,19 @@ for each in headlines_list:
         
         targets = article_page.find_all('section', id="body-text")
         for target in targets:
+            ## delete scripts and ads
+            while True:
+                try:
+                    target.find('script').decompose()
+                except:
+                    break
+            
+            while True:
+                try:
+                    target.find('div', class_="ad").decompose()
+                except:
+                    break
+            
             text = target.text
             text = text.replace('"', "").replace("'", "")
             obj['text'] = text
