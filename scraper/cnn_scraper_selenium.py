@@ -6,7 +6,7 @@ def scrape_section(source, type_of_article):
     if type_of_article == '/style/':
         target = source.find('div', class_='BasicArticle__main')
         if target is None:
-            target = target = source.find('div', class_='SpecialArticle__body')
+            target = source.find('div', class_='SpecialArticle__body')
         targets = list(target)
     elif type_of_article == '/travel/':
         targets = list(source.find('div', class_='Article__body'))
@@ -70,32 +70,29 @@ def scrape_cnn():
                 'link': each.select_one("a").get('href')
             }
 
-            ## get each link
+            ## get link
             news_link = each.select_one("a").get('href')
             if any(skipItem in news_link for skipItem in skiplist):
                 continue
             
             type_of_article = 'normal'
-
             for typeItem in typelist:
                 if typeItem in news_link:
                     type_of_article = typeItem
 
             if (news_link.startswith('/')):
                 news_link = url + news_link
-            if '/videos/' in news_link or 'bleacherreport.com' in news_link:
-                continuetarget
+
             page = requests.get(news_link)
             page_source = page.text
 
             ## parse inner page
-            article_page = BeautifulSoup(page_source, 'lxml')
-            
+            article_page = BeautifulSoup(page_source, 'lxml')            
             text = scrape_section(article_page, type_of_article)
-            obj['text'] = text
-            datasetText.append(title + ' ' + text)
 
             ## save data
+            obj['text'] = text
+            datasetText.append(title + ' ' + text)
             dataset.append(obj)
         except Exception as ex: 
             print ("Error parsing:", ex, '||', title, news_link)
@@ -112,4 +109,4 @@ def scrape_cnn():
         pickle.dump(datasetText, outfile, protocol=2)
 
 ## import cnn_scraper_selenium and/or uncomment the below code to run the scraper
-scrape_cnn()
+#scrape_cnn()
