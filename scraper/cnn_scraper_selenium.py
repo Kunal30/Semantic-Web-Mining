@@ -2,6 +2,42 @@ from selenium import webdriver
 from bs4 import BeautifulSoup
 import json, requests, pickle
 
+def scrape_section(source, type_of_article):    
+    if type_of_article == '/style/':
+        target = source.find('div', class_='BasicArticle__main')
+        if target is None:
+            target = target = source.find('div', class_='SpecialArticle__body')
+        targets = list(target)
+    elif type_of_article == '/travel/':
+        targets = list(source.find('div', class_='Article__body'))
+    else:
+        targets = source.find_all('section', id="body-text")
+
+    for target in targets:
+        ## delete scripts and ads
+        while True:
+            try:
+                target.find('script').decompose()
+            except:
+                break
+        
+        while True:
+            try:
+                target.find('style').decompose()
+            except:
+                break
+        
+        while True:
+            try:
+                target.find('div', class_="ad").decompose()
+            except:
+                break
+        
+        text = target.text
+        text = text.replace('"', "").replace("'", "")
+    
+    return text
+    
 
 def scrape_cnn():
     ## start url
@@ -21,6 +57,9 @@ def scrape_cnn():
 
     driver.quit()
 
+    skiplist = ['/videos/', 'bleacherreport.com', '/interactive/']
+    typelist = ['/style/', '/travel/']
+
     dataset = []
     datasetText = []
     for each in headlines_list:
@@ -33,49 +72,44 @@ def scrape_cnn():
 
             ## get each link
             news_link = each.select_one("a").get('href')
+            if any(skipItem in news_link for skipItem in skiplist):
+                continue
+            
+            type_of_article = 'normal'
+
+            for typeItem in typelist:
+                if typeItem in news_link:
+                    type_of_article = typeItem
+
             if (news_link.startswith('/')):
                 news_link = url + news_link
+            if '/videos/' in news_link or 'bleacherreport.com' in news_link:
+                continuetarget
             page = requests.get(news_link)
             page_source = page.text
 
             ## parse inner page
             article_page = BeautifulSoup(page_source, 'lxml')
             
-            targets = article_page.find_all('section', id="body-text")
-            for target in targets:
-                ## delete scripts and ads
-                while True:
-                    try:
-                        target.find('script').decompose()
-                    except:
-                        break
-                
-                while True:
-                    try:
-                        target.find('div', class_="ad").decompose()
-                    except:
-                        break
-                
-                text = target.text
-                text = text.replace('"', "").replace("'", "")
-                obj['text'] = text
-                datasetText.append(title + ' ' + text)
+            text = scrape_section(article_page, type_of_article)
+            obj['text'] = text
+            datasetText.append(title + ' ' + text)
 
             ## save data
             dataset.append(obj)
         except Exception as ex: 
-            print ("Error parsing:", ex)
+            print ("Error parsing:", ex, '||', title, news_link)
             continue
 
         print ("({}) Parsed news with headline:- [{}]".format(len(dataset), each.select_one("span").text))
 
 
-    #write to file
+    ## write to file
     with open("cnn_out.json", 'w') as outfile:  
         json.dump(dataset, outfile)
 
     with open('cnn_text.pickle', 'wb') as outfile:
-        pickle.dump(datasetText, outfile, protocol=pickle.HIGHEST_PROTOCOL)
+        pickle.dump(datasetText, outfile, protocol=2)
 
 ## import cnn_scraper_selenium and/or uncomment the below code to run the scraper
-# scrape_cnn()
+scrape_cnn()
