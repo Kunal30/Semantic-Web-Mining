@@ -1,6 +1,6 @@
 from selenium import webdriver
 from bs4 import BeautifulSoup
-import json, requests
+import json, requests, pickle
 
 ## start url
 url = "https://cnn.com"
@@ -20,6 +20,7 @@ print ('Total headlines found:', len(headlines_list))
 driver.quit()
 
 dataset = []
+datasetText = []
 for each in headlines_list:
     try:
         obj = {
@@ -58,6 +59,7 @@ for each in headlines_list:
 
         ## save data
         dataset.append(obj)
+        datasetText.append(obj['text'])
     except Exception as ex: 
         print ("Error parsing:", ex)
         continue
@@ -68,3 +70,6 @@ for each in headlines_list:
 #write to file
 with open("cnn_out.json", 'w') as outfile:  
     json.dump(dataset, outfile)
+
+with open('cnn_text.pickle', 'wb') as outfile:
+    pickle.dump(datasetText, outfile, protocol=pickle.HIGHEST_PROTOCOL)
