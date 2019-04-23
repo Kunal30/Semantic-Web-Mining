@@ -2,74 +2,80 @@ from selenium import webdriver
 from bs4 import BeautifulSoup
 import json, requests, pickle
 
-## start url
-url = "https://cnn.com"
 
-## create a new Firefox session
-driver = webdriver.Firefox()
-driver.implicitly_wait(30)
-driver.get(url)
+def scrape_cnn():
+    ## start url
+    url = "https://cnn.com"
 
-## get page
-home_page = BeautifulSoup(driver.page_source, 'lxml')
+    ## create a new Firefox session
+    driver = webdriver.Firefox()
+    driver.implicitly_wait(30)
+    driver.get(url)
 
-## get all headlines
-headlines_list = home_page.find_all('h3', class_="cd__headline")
-print ('Total headlines found:', len(headlines_list))
+    ## get page
+    home_page = BeautifulSoup(driver.page_source, 'lxml')
 
-driver.quit()
+    ## get all headlines
+    headlines_list = home_page.find_all('h3', class_="cd__headline")
+    print ('Total headlines found:', len(headlines_list))
 
-dataset = []
-datasetText = []
-for each in headlines_list:
-    try:
-        obj = {
-            'title': each.select_one("span").text,
-            'link': each.select_one("a").get('href')
-        }
+    driver.quit()
 
-        ## get each link
-        news_link = each.select_one("a").get('href')
-        if (news_link.startswith('/')):
-            news_link = url + news_link
-        page = requests.get(news_link)
-        page_source = page.text
+    dataset = []
+    datasetText = []
+    for each in headlines_list:
+        try:
+            title = each.select_one("span").text
+            obj = {
+                'title': title,
+                'link': each.select_one("a").get('href')
+            }
 
-        ## parse inner page
-        article_page = BeautifulSoup(page_source, 'lxml')
-        
-        targets = article_page.find_all('section', id="body-text")
-        for target in targets:
-            ## delete scripts and ads
-            while True:
-                try:
-                    target.find('script').decompose()
-                except:
-                    break
+            ## get each link
+            news_link = each.select_one("a").get('href')
+            if (news_link.startswith('/')):
+                news_link = url + news_link
+            page = requests.get(news_link)
+            page_source = page.text
+
+            ## parse inner page
+            article_page = BeautifulSoup(page_source, 'lxml')
             
-            while True:
-                try:
-                    target.find('div', class_="ad").decompose()
-                except:
-                    break
-            
-            text = target.text
-            text = text.replace('"', "").replace("'", "")
-            obj['text'] = text
+            targets = article_page.find_all('section', id="body-text")
+            for target in targets:
+                ## delete scripts and ads
+                while True:
+                    try:
+                        target.find('script').decompose()
+                    except:
+                        break
+                
+                while True:
+                    try:
+                        target.find('div', class_="ad").decompose()
+                    except:
+                        break
+                
+                text = target.text
+                text = text.replace('"', "").replace("'", "")
+                obj['text'] = text
+                datasetText.append(title + ' ' + text)
 
-        ## save data
-        dataset.append(obj)
-        datasetText.append(obj['text'])
-    except Exception as ex: 
-        print ("Error parsing:", ex)
-        continue
+            ## save data
+            dataset.append(obj)
+        except Exception as ex: 
+            print ("Error parsing:", ex)
+            continue
 
-    print ("({}) Parsed news with headline:- [{}]".format(len(dataset), each.select_one("span").text))
+        print ("({}) Parsed news with headline:- [{}]".format(len(dataset), each.select_one("span").text))
 
 
-#write to file
-with open("cnn_out.json", 'w') as outfile:  
-    json.dump(dataset, outfile)
+    #write to file
+    with open("cnn_out.json", 'w') as outfile:  
+        json.dump(dataset, outfile)
 
-with open('cnn_text.pickle', 'wb') as outfile:
-    pickle.dump(datasetText, outfile, protocol=pickle.HIGHEST_PROTOCOL)
+    with open('cnn_text.pickle', 'wb') as outfile:
+        pickle.dump(datasetText, outfile, protocol=pickle.HIGHEST_PROTOCOL)
+
+## import cnn_scraper_selenium and/or uncomment the below code to run the scraper
+# scrape_cnn()
