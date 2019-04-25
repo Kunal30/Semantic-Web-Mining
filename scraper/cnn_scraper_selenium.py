@@ -10,6 +10,8 @@ def scrape_section(source, type_of_article):
         targets = list(target)
     elif type_of_article == '/travel/':
         targets = list(source.find('div', class_='Article__body'))
+    elif type_of_article == '/cnn-underscored/':
+        targets = list(source.find('main'))
     else:
         targets = source.find_all('section', id="body-text")
 
@@ -57,8 +59,8 @@ def scrape_cnn():
 
     driver.quit()
 
-    skiplist = ['/videos/', 'bleacherreport.com', '/interactive/']
-    typelist = ['/style/', '/travel/']
+    skiplist = ['/videos/', 'bleacherreport.com', '/interactive/', '/live-news/']
+    typelist = ['/style/', '/travel/', '/cnn-underscored/']
 
     dataset = []
     datasetText = []
@@ -109,4 +111,4 @@ def scrape_cnn():
         pickle.dump(datasetText, outfile, protocol=2)
 
 ## import cnn_scraper_selenium and/or uncomment the below code to run the scraper
-#scrape_cnn()
+scrape_cnn()
